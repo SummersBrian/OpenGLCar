@@ -50,6 +50,7 @@ private:
     QMatrix4x4 mvpMat;
     QMatrix4x4 mvpMat0;
     QOpenGLTexture *textures[6];
+
     int cubNum;
     QString txtPath;
 

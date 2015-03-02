@@ -59,12 +59,14 @@ void MyWidget::initShaders()
 {
 #define PROGRAM_VERTEX_ATTRIBUTE 0
 #define PROGRAM_TEXCOORD_ATTRIBUTE 1
+#define PROGRAM_COLOR_ATTRIBUTE 2
 
     QOpenGLShader *vshader = new QOpenGLShader(QOpenGLShader::Vertex, this);
     const char *vsrc =
             "#version 330\n"
             "layout (location = 0) in vec4 vertex;\n"
             "layout (location = 1) in vec4 texCoord;\n"
+            "layout (location = 2) in vec4 color;\n"
             "uniform mat4 matrix;\n"
             "out vec4 tCd;\n"
             "void main(void)\n"
@@ -78,11 +80,12 @@ void MyWidget::initShaders()
     const char *fsrc =
             "#version 330\n"
             "uniform sampler2D fTexture;\n"
+            "uniform vec4 color;\n"
             "in vec4 tCd;\n"
             "out vec4 ffColor;\n"
             "void main(void)\n"
             "{\n"
-            "   ffColor = texture(fTexture, tCd.st);\n"
+            "   ffColor = texture(fTexture, tCd.st) * color;\n"
             "}\n";
     fshader->compileSourceCode(fsrc);
 
@@ -91,6 +94,7 @@ void MyWidget::initShaders()
     program->addShader(fshader);
     program->bindAttributeLocation("vertex", PROGRAM_VERTEX_ATTRIBUTE);
     program->bindAttributeLocation("texCoord", PROGRAM_TEXCOORD_ATTRIBUTE);
+    // program->bindAttributeLocation("color", PROGRAM_COLOR_ATTRIBUTE);
     program->link();
 
     program->bind();
@@ -133,8 +137,6 @@ void MyWidget::loadCubes()
     moveCube(iCds, coords, -5.0f, 0.5f, 35.0f, 0.05f);
     addCube(vertData, coords);
     cubNum++;
-
-
 
     for (int j = 0; j < 6; ++j)
     {
@@ -188,15 +190,25 @@ void MyWidget::paintGL()
     glClearColor(clearColor.redF(), clearColor.greenF(), clearColor.blueF(), clearColor.alphaF());
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    int offset = 0;
     program->setUniformValue("matrix", mvpMat);
     program->enableAttributeArray(PROGRAM_VERTEX_ATTRIBUTE);
-    program->setAttributeBuffer(PROGRAM_VERTEX_ATTRIBUTE, GL_FLOAT, 0, 3, 5 * sizeof(GLfloat));
+    program->setAttributeBuffer(PROGRAM_VERTEX_ATTRIBUTE, GL_FLOAT, offset, 3, 5 * sizeof(GLfloat));
+    offset += 3 * sizeof(GLfloat);
     program->enableAttributeArray(PROGRAM_TEXCOORD_ATTRIBUTE);
-    program->setAttributeBuffer(PROGRAM_TEXCOORD_ATTRIBUTE, GL_FLOAT, 3 * sizeof(GLfloat), 2, 5 * sizeof(GLfloat));
-
+    program->setAttributeBuffer(PROGRAM_TEXCOORD_ATTRIBUTE, GL_FLOAT, offset, 2, 5 * sizeof(GLfloat));
+    QVector4D color[6] = {
+        QVector4D(1.0f, 0.55f, 0.55f, 0.0f),
+        QVector4D(0.55f, 0.55f, 1.0f, 0.0f),
+        QVector4D(0.55f, 1.0f, 0.55f, 0.0f),
+        QVector4D(1.0f, 0.55f, 1.0f, 0.0f),
+        QVector4D(0.55f, 1.0f, 1.0f, 0.0f),
+        QVector4D(1.0f, 1.0f, 0.55f, 0.0f),
+    };
     for (int cube = 0; cube < cubNum; ++cube) {
         for (int i = 0; i < 6; ++i) {
             textures[i]->bind();
+            program->setUniformValue("color", color[cube]);
             glDrawArrays(GL_TRIANGLE_FAN, (cube*6+i) * 4, 4);
         }
     }
