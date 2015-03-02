@@ -14,7 +14,7 @@ MyWidget::MyWidget(QWidget *parent)
 {
     memset(textures, 0, sizeof(textures));
     txtPath = TXT_IMG_PATH;
-    cubNum = CUBE_NUM;
+    cubNum = 0;
 }
 
 MyWidget::~MyWidget()
@@ -112,6 +112,29 @@ void MyWidget::loadCubes()
 
     moveCube(iCds, coords, 1.5f, 0.5f, 10.0f, 0.05f);
     addCube(vertData, coords);
+    cubNum++;
+
+    moveCube(iCds, coords, -5.0f, 0.5f, 15.0f, 0.05f);
+    addCube(vertData, coords);
+    cubNum++;
+
+    moveCube(iCds, coords, 1.5f, 0.5f, 20.f, 0.05f);
+    addCube(vertData, coords);
+    cubNum++;
+
+    moveCube(iCds, coords, -5.0f, 0.5f, 25.0f, 0.05f);
+    addCube(vertData, coords);
+    cubNum++;
+
+    moveCube(iCds, coords, 1.5f, 0.5f, 30.0f, 0.05f);
+    addCube(vertData, coords);
+    cubNum++;
+
+    moveCube(iCds, coords, -5.0f, 0.5f, 35.0f, 0.05f);
+    addCube(vertData, coords);
+    cubNum++;
+
+
 
     for (int j = 0; j < 6; ++j)
     {
@@ -152,9 +175,9 @@ void MyWidget::moveCube(const int cords[6][4][3], float (&nCds)[6][4][3], float 
     {
         for (int j = 0; j < 4; ++j)
         {
-                nCds[i][j][0] = (cords[i][j][0]+x)*scale;
-                nCds[i][j][1] = (cords[i][j][1]+y)*scale;
-                nCds[i][j][2] = (cords[i][j][2]+z)*scale;
+            nCds[i][j][0] = (cords[i][j][0]+x)*scale;
+            nCds[i][j][1] = (cords[i][j][1]+y)*scale;
+            nCds[i][j][2] = (cords[i][j][2]+z)*scale;
         }
     }
 }
@@ -171,9 +194,11 @@ void MyWidget::paintGL()
     program->enableAttributeArray(PROGRAM_TEXCOORD_ATTRIBUTE);
     program->setAttributeBuffer(PROGRAM_TEXCOORD_ATTRIBUTE, GL_FLOAT, 3 * sizeof(GLfloat), 2, 5 * sizeof(GLfloat));
 
-    for (int i = 0; i < 6; ++i) {
-        textures[i]->bind();
-        glDrawArrays(GL_TRIANGLE_FAN, i * 4, 4);
+    for (int cube = 0; cube < cubNum; ++cube) {
+        for (int i = 0; i < 6; ++i) {
+            textures[i]->bind();
+            glDrawArrays(GL_TRIANGLE_FAN, (cube*6+i) * 4, 4);
+        }
     }
 }
 
