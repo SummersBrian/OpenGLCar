@@ -49,9 +49,13 @@ void MyWidget::initMat()
 {
     QMatrix4x4 proj;
     QMatrix4x4 view;
+    QMatrix4x4 model = QMatrix4x4(1.0f, 0.0f, 0.0f, 0.05f,
+                                  0.0f, 1.0f, 0.0f, 0.0f,
+                                  0.0f, 0.0f, 1.0f, -0.25f,
+                                  0.0f, 0.0f, 0.0f, 1.0f);
     proj.perspective(45.0f, 1.0f, 0.000001f, 100.0f);
     view.lookAt(QVector3D(0.0f, 0.0, 0.0f), QVector3D(0.0f, 0.0f, 1.0f), QVector3D(0.0f, 1.0f, 0.0f));
-    mvpMat0 = proj * view;
+    mvpMat0 = proj * view * model;
     mvpMat = mvpMat0;
 }
 
