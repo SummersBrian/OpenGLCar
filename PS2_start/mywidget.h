@@ -17,6 +17,7 @@ author: Zheng Xu, xuzhustc@gmail.com
 #include <QOpenGLTexture>
 #include <QKeyEvent>
 #include <QtGui>
+#include <QtCore/qmath.h>
 
 #include <QMatrix4x4>
 #include <QVector4D>
@@ -36,6 +37,7 @@ protected:
 
     void initShaders();
     void initMat();
+    void keyPressEvent(QKeyEvent * event);
 
 private:
     void loadCubes();
@@ -49,8 +51,17 @@ private:
     QOpenGLBuffer vbo;
     QMatrix4x4 mvpMat;
     QMatrix4x4 mvpMat0;
+    QMatrix4x4 proj;
+    QMatrix4x4 view;
+    QMatrix4x4 model;
     QOpenGLTexture *textures[6];
+    QVector3D up;
+    QVector3D direction;
 
+    float move_speed;
+    float movement;
+    float rot_radians;
+    float angle;
     int cubNum;
     QString txtPath;
 

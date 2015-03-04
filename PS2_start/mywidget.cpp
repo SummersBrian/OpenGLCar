@@ -15,6 +15,13 @@ MyWidget::MyWidget(QWidget *parent)
     memset(textures, 0, sizeof(textures));
     txtPath = TXT_IMG_PATH;
     cubNum = 0;
+    setFocusPolicy(Qt::StrongFocus);
+    move_speed = -0.01f;
+    rot_radians = 3.14f/36.0f;
+    movement = 0;
+    angle = 0.0f;
+    up = QVector3D(0.0f,1.0f,0.0f);
+    direction = QVector3D(0.0f,0.0f,-0.01f);
 }
 
 MyWidget::~MyWidget()
@@ -47,15 +54,9 @@ void MyWidget::initializeGL()
 
 void MyWidget::initMat()
 {
-    QMatrix4x4 proj;
-    QMatrix4x4 view;
-    QMatrix4x4 model = QMatrix4x4(1.0f, 0.0f, 0.0f, 0.05f,
-                                  0.0f, 1.0f, 0.0f, 0.0f,
-                                  0.0f, 0.0f, 1.0f, -0.25f,
-                                  0.0f, 0.0f, 0.0f, 1.0f);
     proj.perspective(45.0f, 1.0f, 0.000001f, 100.0f);
     view.lookAt(QVector3D(0.0f, 0.0, 0.0f), QVector3D(0.0f, 0.0f, 1.0f), QVector3D(0.0f, 1.0f, 0.0f));
-    mvpMat0 = proj * view * model;
+    mvpMat0 = proj * view;
     mvpMat = mvpMat0;
 }
 
@@ -194,7 +195,7 @@ void MyWidget::paintGL()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     int offset = 0;
-    program->setUniformValue("matrix", mvpMat);
+    program->setUniformValue("matrix", proj * view * model);
     program->enableAttributeArray(PROGRAM_VERTEX_ATTRIBUTE);
     program->setAttributeBuffer(PROGRAM_VERTEX_ATTRIBUTE, GL_FLOAT, offset, 3, 5 * sizeof(GLfloat));
     offset += 3 * sizeof(GLfloat);
@@ -222,3 +223,51 @@ void MyWidget::resizeGL(int width, int height)
     int side = qMin(width, height);
     glViewport((width - side) / 2, (height - side) / 2, side, side);
 }
+
+void MyWidget::keyPressEvent(QKeyEvent * event) {
+    QMatrix4x4 identity;
+    identity.setToIdentity();
+    float degrees;
+    if(event->key() == Qt::Key_Up) {
+        movement += move_speed;
+        model.translate(direction);
+        /*translation = QMatrix4x4(1,0,0,0,
+                                 0,1,0,0,
+                                 0,0,1,movement,
+                                 0,0,0,1);*/
+    }
+
+    if (event->key() == Qt::Key_Down) {
+        movement -= move_speed;
+        model.translate(direction);
+        /*translation = QMatrix4x4(1,0,0,0,
+                                 0,1,0,0,
+                                 0,0,1,movement,
+                                 0,0,0,1);*/
+    }
+
+    if (event->key() == Qt::Key_Left) {
+        angle -= rot_radians;
+        degrees = angle * (180.0f/3.14f);
+        direction = QMatrix4x4(qCos(angle),0,qSin(angle),0,
+                              0,1,0,0,
+                              -qSin(angle),0,qCos(angle),0,
+                              0,0,0,1) * -direction;
+        model.rotate(degrees, up);
+    }
+
+    if (event->key() == Qt::Key_Right) {
+        angle += rot_radians;
+        degrees = angle * (180.0f/3.14f);
+        direction = QMatrix4x4(qCos(angle),0,qSin(angle),0,
+                              0,1,0,0,
+                              -qSin(angle),0,qCos(angle),0,
+                              0,0,0,1) * direction;
+        model.rotate(degrees,up);
+    }
+
+    //model = translation * rotation;
+    update();
+}
+
+
