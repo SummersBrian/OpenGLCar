@@ -38,6 +38,7 @@ protected:
     void initShaders();
     void initMat();
     void keyPressEvent(QKeyEvent * event);
+    void mousePressEvent(QMouseEvent * event);
 
 private:
     void loadCubes();

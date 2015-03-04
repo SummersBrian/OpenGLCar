@@ -272,4 +272,30 @@ void MyWidget::keyPressEvent(QKeyEvent * event) {
     update();
 }
 
+void MyWidget::mousePressEvent(QMouseEvent * event) {
+    QMatrix4x4 translation;
+    translation.setToIdentity();
+
+    QMatrix4x4 rotation;
+    rotation.setToIdentity();
+
+    if (event->button() == Qt::LeftButton) {
+        rotation = QMatrix4x4(qCos(-rot_radians),0,qSin(-rot_radians),0,
+                              0,1,0,0,
+                              -qSin(-rot_radians),0,qCos(-rot_radians),0,
+                              0,0,0,1);
+    }
+
+    if (event->button() == Qt::RightButton) {
+        rotation = QMatrix4x4(qCos(rot_radians),0,qSin(rot_radians),0,
+                              0,1,0,0,
+                              -qSin(rot_radians),0,qCos(rot_radians),0,
+                              0,0,0,1);
+    }
+
+    //compute model matrix with the translation and rotation matrices and the previous model matrix
+    model = translation * rotation * model;
+    update();
+}
+
 
