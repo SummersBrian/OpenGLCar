@@ -15,13 +15,12 @@ MyWidget::MyWidget(QWidget *parent)
     memset(textures, 0, sizeof(textures));
     txtPath = TXT_IMG_PATH;
     cubNum = 0;
+
     setFocusPolicy(Qt::StrongFocus);
-    move_speed = -0.01f;
+
+    //transformation variables
+    move_speed = 0.03f;
     rot_radians = 3.14f/36.0f;
-    movement = 0;
-    angle = 0.0f;
-    up = QVector3D(0.0f,1.0f,0.0f);
-    direction = QVector3D(0.0f,0.0f,-0.01f);
 }
 
 MyWidget::~MyWidget()
@@ -56,8 +55,6 @@ void MyWidget::initMat()
 {
     proj.perspective(45.0f, 1.0f, 0.000001f, 100.0f);
     view.lookAt(QVector3D(0.0f, 0.0, 0.0f), QVector3D(0.0f, 0.0f, 1.0f), QVector3D(0.0f, 1.0f, 0.0f));
-    mvpMat0 = proj * view;
-    mvpMat = mvpMat0;
 }
 
 void MyWidget::initShaders()
@@ -71,7 +68,7 @@ void MyWidget::initShaders()
             "#version 330\n"
             "layout (location = 0) in vec4 vertex;\n"
             "layout (location = 1) in vec4 texCoord;\n"
-            "layout (location = 2) in vec4 color;\n"
+            "//layout (location = 2) in vec4 color;\n"
             "uniform mat4 matrix;\n"
             "out vec4 tCd;\n"
             "void main(void)\n"
@@ -118,6 +115,7 @@ void MyWidget::loadCubes()
     float coords[6][4][3];
     QVector<GLfloat> vertData;
 
+    //adding 6 cubes to the world
     moveCube(iCds, coords, 1.5f, 0.5f, 10.0f, 0.05f);
     addCube(vertData, coords);
     cubNum++;
@@ -201,18 +199,22 @@ void MyWidget::paintGL()
     offset += 3 * sizeof(GLfloat);
     program->enableAttributeArray(PROGRAM_TEXCOORD_ATTRIBUTE);
     program->setAttributeBuffer(PROGRAM_TEXCOORD_ATTRIBUTE, GL_FLOAT, offset, 2, 5 * sizeof(GLfloat));
+
+    //setting colors for each cube
     QVector4D color[6] = {
-        QVector4D(1.0f, 0.55f, 0.55f, 0.0f),
-        QVector4D(0.55f, 0.55f, 1.0f, 0.0f),
-        QVector4D(0.55f, 1.0f, 0.55f, 0.0f),
-        QVector4D(1.0f, 0.55f, 1.0f, 0.0f),
-        QVector4D(0.55f, 1.0f, 1.0f, 0.0f),
-        QVector4D(1.0f, 1.0f, 0.55f, 0.0f),
-    };
+            QVector4D(1.0f, 0.55f, 0.55f, 0.0f),
+            QVector4D(0.55f, 0.55f, 1.0f, 0.0f),
+            QVector4D(0.55f, 1.0f, 0.55f, 0.0f),
+            QVector4D(1.0f, 0.55f, 1.0f, 0.0f),
+            QVector4D(0.55f, 1.0f, 1.0f, 0.0f),
+            QVector4D(1.0f, 1.0f, 0.55f, 0.0f),
+        };
+
+    //painting textures and colors for each cube
     for (int cube = 0; cube < cubNum; ++cube) {
         for (int i = 0; i < 6; ++i) {
             textures[i]->bind();
-            program->setUniformValue("color", color[cube]);
+            program->setUniformValue("color", color[cube]); //adding color to the vertex shader
             glDrawArrays(GL_TRIANGLE_FAN, (cube*6+i) * 4, 4);
         }
     }
@@ -225,48 +227,48 @@ void MyWidget::resizeGL(int width, int height)
 }
 
 void MyWidget::keyPressEvent(QKeyEvent * event) {
-    QMatrix4x4 identity;
-    identity.setToIdentity();
-    float degrees;
+    QMatrix4x4 translation;
+    translation.setToIdentity();
+
+    QMatrix4x4 rotation;
+    rotation.setToIdentity();
+
+    //translate
     if(event->key() == Qt::Key_Up) {
-        movement += move_speed;
-        model.translate(direction);
-        /*translation = QMatrix4x4(1,0,0,0,
+        translation = QMatrix4x4(1,0,0,0,
                                  0,1,0,0,
-                                 0,0,1,movement,
-                                 0,0,0,1);*/
+                                 0,0,1,-1.0f * move_speed,
+                                 0,0,0,1);
+
     }
 
+    //translate
     if (event->key() == Qt::Key_Down) {
-        movement -= move_speed;
-        model.translate(direction);
-        /*translation = QMatrix4x4(1,0,0,0,
+        translation = QMatrix4x4(1,0,0,0,
                                  0,1,0,0,
-                                 0,0,1,movement,
-                                 0,0,0,1);*/
+                                 0,0,1,-1.0f * -move_speed,
+                                 0,0,0,1);
+
     }
 
+    //rotate
     if (event->key() == Qt::Key_Left) {
-        angle -= rot_radians;
-        degrees = angle * (180.0f/3.14f);
-        direction = QMatrix4x4(qCos(angle),0,qSin(angle),0,
+        rotation = QMatrix4x4(qCos(-rot_radians),0,qSin(-rot_radians),0,
                               0,1,0,0,
-                              -qSin(angle),0,qCos(angle),0,
-                              0,0,0,1) * -direction;
-        model.rotate(degrees, up);
+                              -qSin(-rot_radians),0,qCos(-rot_radians),0,
+                              0,0,0,1);
     }
 
+    //rotate
     if (event->key() == Qt::Key_Right) {
-        angle += rot_radians;
-        degrees = angle * (180.0f/3.14f);
-        direction = QMatrix4x4(qCos(angle),0,qSin(angle),0,
+        rotation = QMatrix4x4(qCos(rot_radians),0,qSin(rot_radians),0,
                               0,1,0,0,
-                              -qSin(angle),0,qCos(angle),0,
-                              0,0,0,1) * direction;
-        model.rotate(degrees,up);
+                              -qSin(rot_radians),0,qCos(rot_radians),0,
+                              0,0,0,1);
     }
 
-    //model = translation * rotation;
+    //compute model matrix with the translation and rotation matrices and the previous model matrix
+    model = translation * rotation * model;
     update();
 }
 

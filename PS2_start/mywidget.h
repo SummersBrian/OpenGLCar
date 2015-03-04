@@ -49,14 +49,10 @@ private:
     QOpenGLShaderProgram *program;
     QOpenGLVertexArrayObject vao;
     QOpenGLBuffer vbo;
-    QMatrix4x4 mvpMat;
-    QMatrix4x4 mvpMat0;
     QMatrix4x4 proj;
     QMatrix4x4 view;
     QMatrix4x4 model;
     QOpenGLTexture *textures[6];
-    QVector3D up;
-    QVector3D direction;
 
     float move_speed;
     float movement;
