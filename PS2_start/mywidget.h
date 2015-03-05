@@ -1,5 +1,11 @@
 /****************************************************************************
 **
+CMSC427 Spring 2015 Problem Set 2
+Brian Summers - 110656609
+summers.brian.cs@gmail.com
+3/5/2015
+
+Uses start code by:
 Window for OpenGL in QT.
 Start code for CMSC 427, Spring 2015
 Reference: cube & texture example in Qt Creator
@@ -30,6 +36,10 @@ public:
     explicit MyWidget(QWidget *parent = 0);
     ~MyWidget();
 
+public slots:
+    void translate();
+    void rotatePitch();
+
 protected:
     void initializeGL() Q_DECL_OVERRIDE;
     void resizeGL(int w, int h) Q_DECL_OVERRIDE;
@@ -44,6 +54,7 @@ private:
     void loadCubes();
     void moveCube(const int cords[6][4][3], float (&nCds)[6][4][3], float x, float y, float z, float scale);
     void addCube(QVector<GLfloat> &vertData,float coords[6][4][3]);
+    void rotateYaw(float radians);
 
 
     QColor clearColor;
@@ -54,12 +65,13 @@ private:
     QMatrix4x4 view;
     QMatrix4x4 model;
     QOpenGLTexture *textures[6];
+    QTimer *timer, *timer2;
 
     float move_speed;
-    float movement;
     float rot_radians;
-    float angle;
+    int rot_count;
     int cubNum;
+    bool automove;
     QString txtPath;
 
 #define RESOURCE_FLAG true

@@ -1,5 +1,12 @@
 /****************************************************************************
 **
+CMSC427 Spring 2015 Problem Set 2
+Brian Summers - 110656609
+summers.brian.cs@gmail.com
+3/5/2015
+
+
+Uses Start code by:
 Window for OpenGL in QT.
 Start code for CMSC 427, Spring 2015
 Reference: cube & texture example in Qt Creator
@@ -19,8 +26,10 @@ MyWidget::MyWidget(QWidget *parent)
     setFocusPolicy(Qt::StrongFocus);
 
     //transformation variables
-    move_speed = 0.03f;
     rot_radians = 3.14f/36.0f;
+    automove = false;
+    move_speed = 0.03f;
+    rot_count = 0;
 }
 
 MyWidget::~MyWidget()
@@ -61,7 +70,6 @@ void MyWidget::initShaders()
 {
 #define PROGRAM_VERTEX_ATTRIBUTE 0
 #define PROGRAM_TEXCOORD_ATTRIBUTE 1
-#define PROGRAM_COLOR_ATTRIBUTE 2
 
     QOpenGLShader *vshader = new QOpenGLShader(QOpenGLShader::Vertex, this);
     const char *vsrc =
@@ -202,13 +210,13 @@ void MyWidget::paintGL()
 
     //setting colors for each cube
     QVector4D color[6] = {
-            QVector4D(1.0f, 0.55f, 0.55f, 0.0f),
-            QVector4D(0.55f, 0.55f, 1.0f, 0.0f),
-            QVector4D(0.55f, 1.0f, 0.55f, 0.0f),
-            QVector4D(1.0f, 0.55f, 1.0f, 0.0f),
-            QVector4D(0.55f, 1.0f, 1.0f, 0.0f),
-            QVector4D(1.0f, 1.0f, 0.55f, 0.0f),
-        };
+        QVector4D(1.0f, 0.55f, 0.55f, 0.0f),
+        QVector4D(0.55f, 0.55f, 1.0f, 0.0f),
+        QVector4D(0.55f, 1.0f, 0.55f, 0.0f),
+        QVector4D(1.0f, 0.55f, 1.0f, 0.0f),
+        QVector4D(0.55f, 1.0f, 1.0f, 0.0f),
+        QVector4D(1.0f, 1.0f, 0.55f, 0.0f),
+    };
 
     //painting textures and colors for each cube
     for (int cube = 0; cube < cubNum; ++cube) {
@@ -226,76 +234,135 @@ void MyWidget::resizeGL(int width, int height)
     glViewport((width - side) / 2, (height - side) / 2, side, side);
 }
 
+// respond to keyboard key presses for translation and rotation
 void MyWidget::keyPressEvent(QKeyEvent * event) {
-    QMatrix4x4 translation;
-    translation.setToIdentity();
 
-    QMatrix4x4 rotation;
-    rotation.setToIdentity();
-
-    //translate
+    //translate in forward direction
     if(event->key() == Qt::Key_Up) {
-        translation = QMatrix4x4(1,0,0,0,
-                                 0,1,0,0,
-                                 0,0,1,-1.0f * move_speed,
-                                 0,0,0,1);
+        //changes move speed to translate in proper direction
+        if (move_speed < 0)
+            move_speed *= -1;
 
+        //forward automove
+        if (automove) {
+            connect(timer, SIGNAL(timeout()), this, SLOT(translate()));
+            timer->start(500);
+        } else { //forward manual move
+            translate();
+        }
     }
 
-    //translate
+    //translate in backward direction
     if (event->key() == Qt::Key_Down) {
-        translation = QMatrix4x4(1,0,0,0,
-                                 0,1,0,0,
-                                 0,0,1,-1.0f * -move_speed,
-                                 0,0,0,1);
+        //change move speed to translate in proper direction
+        if (move_speed > 0)
+            move_speed *= -1;
 
+        if (automove) {
+            //change to backward automovement
+            connect(timer, SIGNAL(timeout()), this, SLOT(translate()));
+            timer->start(500);
+        } else { //backward manual move
+            translate();
+        }
     }
 
-    //rotate
-    if (event->key() == Qt::Key_Left) {
-        rotation = QMatrix4x4(qCos(-rot_radians),0,qSin(-rot_radians),0,
-                              0,1,0,0,
-                              -qSin(-rot_radians),0,qCos(-rot_radians),0,
-                              0,0,0,1);
+    //rotate to the left
+    if (event->key() == Qt::Key_Left)
+        rotateYaw(-rot_radians);
+
+    //rotate to the right
+    if (event->key() == Qt::Key_Right)
+        rotateYaw(rot_radians);
+
+    //toggle automove
+    if (event->key() == Qt::Key_Space) {
+        //turn off automovement
+        if (automove) {
+            automove = false;
+            disconnect(timer, SIGNAL(timeout()), this, SLOT(translate()));
+            timer->~QTimer();
+        } else { //turn on autmovement
+            //start moving the car forward automatically
+            if (move_speed < 0)
+                move_speed *= -1;
+
+            automove = true;
+            timer = new QTimer();
+            connect(timer, SIGNAL(timeout()), this, SLOT(translate()));
+            timer->start(500);
+        }
     }
 
-    //rotate
-    if (event->key() == Qt::Key_Right) {
-        rotation = QMatrix4x4(qCos(rot_radians),0,qSin(rot_radians),0,
-                              0,1,0,0,
-                              -qSin(rot_radians),0,qCos(rot_radians),0,
-                              0,0,0,1);
+    //speed up the car
+    if (event->key() == Qt::Key_F)
+        move_speed *= 2;
+
+    //slow down the car
+    if (event->key() == Qt::Key_S)
+        move_speed /= 2;
+
+    //somersault
+    if (event->key() == Qt::Key_M) {
+        timer2 = new QTimer();
+        connect(timer2, SIGNAL(timeout()), this, SLOT(rotatePitch()));
+        timer2->start(500);
     }
 
-    //compute model matrix with the translation and rotation matrices and the previous model matrix
-    model = translation * rotation * model;
-    update();
 }
 
+//respond to mouse button presses for rotation
 void MyWidget::mousePressEvent(QMouseEvent * event) {
-    QMatrix4x4 translation;
-    translation.setToIdentity();
 
-    QMatrix4x4 rotation;
-    rotation.setToIdentity();
-
+    // rotate to the left
     if (event->button() == Qt::LeftButton) {
-        rotation = QMatrix4x4(qCos(-rot_radians),0,qSin(-rot_radians),0,
-                              0,1,0,0,
-                              -qSin(-rot_radians),0,qCos(-rot_radians),0,
-                              0,0,0,1);
+        rotateYaw(-rot_radians);
     }
 
-    if (event->button() == Qt::RightButton) {
-        rotation = QMatrix4x4(qCos(rot_radians),0,qSin(rot_radians),0,
-                              0,1,0,0,
-                              -qSin(rot_radians),0,qCos(rot_radians),0,
-                              0,0,0,1);
+    //rotate to the right
+    if (event->button() == Qt::RightButton){
+        rotateYaw(rot_radians);
     }
+}
 
-    //compute model matrix with the translation and rotation matrices and the previous model matrix
-    model = translation * rotation * model;
+//translates the world coordinates by move_speed units
+void MyWidget::translate() {
+
+    model = QMatrix4x4(1,0,0,0,
+                       0,1,0,0,
+                       0,0,1,-1.0f * move_speed,
+                       0,0,0,1)
+            * model;
     update();
 }
 
+//rotate the world coordinates by radians about the y-axis
+void MyWidget::rotateYaw(float radians) {
 
+    model = QMatrix4x4(qCos(radians),0,qSin(radians),0,
+                       0,1,0,0,
+                       -qSin(radians),0,qCos(radians),0,
+                       0,0,0,1)
+            * model;
+    update();
+}
+
+//rotate the world coordinates by rot_radians around the camera's "x-axis"
+void MyWidget::rotatePitch() {
+    //rotating 72 times will rotate the somersault by 2pi radians (360 degrees)
+    if (rot_count < 72) {
+        model = QMatrix4x4(1,0,0,0,
+                           0,qCos(rot_radians),-qSin(rot_radians),0,
+                           0,qSin(rot_radians),qCos(rot_radians),0,
+                           0,0,0,1)
+                * model;
+        update();
+        rot_count++;
+    }
+
+    else { //end the somersault because we've reached 2pi radians rotation
+        disconnect(timer2, SIGNAL(timeout()), this, SLOT(rotatePitch()));
+        timer2->~QTimer();
+        rot_count = 0;
+    }
+}
