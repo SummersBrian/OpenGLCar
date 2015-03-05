@@ -313,6 +313,7 @@ void MyWidget::keyPressEvent(QKeyEvent * event) {
 }
 
 //respond to mouse button presses for rotation
+//see rotateYaw() function
 void MyWidget::mousePressEvent(QMouseEvent * event) {
 
     // rotate to the left
