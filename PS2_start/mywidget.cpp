@@ -235,6 +235,7 @@ void MyWidget::resizeGL(int width, int height)
 }
 
 // respond to keyboard key presses for translation and rotation
+// see translate(), rotateYaw(), rotatePitch() functions
 void MyWidget::keyPressEvent(QKeyEvent * event) {
 
     //translate in forward direction
