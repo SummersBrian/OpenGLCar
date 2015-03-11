@@ -76,7 +76,6 @@ void MyWidget::initShaders()
             "#version 330\n"
             "layout (location = 0) in vec4 vertex;\n"
             "layout (location = 1) in vec4 texCoord;\n"
-            "//layout (location = 2) in vec4 color;\n"
             "uniform mat4 matrix;\n"
             "out vec4 tCd;\n"
             "void main(void)\n"
